@@ -8,7 +8,8 @@ backend.hcl
 
 # Terraform working directories
 .terraform/
-.terraform.lock.hcl
+
+# Lock files should be committed — do NOT add .terraform.lock.hcl here
 
 # Crash logs
 crash.log
