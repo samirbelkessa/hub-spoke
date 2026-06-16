@@ -14,13 +14,16 @@
 
 # ── NAMING ───────────────────────────────────────────────────────────────────
 # Must match hub values to ensure consistent resource naming
-
+sql_admin_login = "sqladmin"
+sql_admin_password = "P@ssw0rd!2024" # Sensitive, must be passed via environment variable
+tenant_id = "01c40c02-a3ca-49b1-a844-dd9c825be5eb" # Sensitive, must be passed via environment variable
 environment    = "dev"           # dev | staging | prod
-location       = "francecentral"
-location_short = "frc"           # frc = France Central
+location       = "francecentral" # imposé par la policy CAF Governance (francecentral | westeurope)
+location_short = "frc"           # frc = France Central — doit matcher le hub
 workload       = "myapp"         # must match hub value
 instance       = "001"           # must match hub value
-
+spoke_subscription_id = "b016bf4d-0eda-4613-b434-4d1fb841c3cb"
+hub_subscription_id = "8d0e92f6-619b-497b-9957-9dfaf7111240" # Sensitive, must be passed via environment variable
 # ── HUB REFERENCES ───────────────────────────────────────────────────────────
 # Retrieve these values from hub outputs: terraform -chdir=../hub output
 
@@ -45,12 +48,12 @@ private_dns_zone_webapp_id = ""
 key_vault_sku       = "standard"
 kv_soft_delete_days = 90
 kv_purge_protection = true
-kv_allowed_ips      = []
+kv_allowed_ips      = ["88.186.124.220"] # IP du poste déployeur — requis pour écrire le secret via Terraform (réseau KV en Deny)
 
 # ── SQL ───────────────────────────────────────────────────────────────────────
 
-sql_aad_admin_login     = "sqlaadmin"
-sql_aad_admin_object_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+sql_aad_admin_login     = "samir.belkessa@gmail.com"
+sql_aad_admin_object_id = "12d2a769-7745-4fca-8be9-795926ea8e7f"
 sql_server_version      = "12.0"
 sql_db_sku_name         = "GP_Gen5_2"
 sql_max_size_gb         = 32
@@ -66,4 +69,5 @@ tags = {
   environment = "dev"
   managed_by  = "terraform"
   project     = "hub-spoke"
+  NetworkType = "Spoke" # requis par la policy CAF Network Baseline sur les resource groups
 }

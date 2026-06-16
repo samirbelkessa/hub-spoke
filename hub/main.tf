@@ -76,6 +76,29 @@ resource "azurerm_public_ip" "appgw" {
   tags                = merge(var.tags, { resource_type = "public_ip" })
 }
 
+# ── WAF POLICY ────────────────────────────────────────────────────────────────
+# La configuration WAF inline sur l'AppGW a été retirée par Azure.
+# On attache une WAF policy dédiée via firewall_policy_id.
+
+resource "azurerm_web_application_firewall_policy" "appgw" {
+  name                = module.naming.waf_policy
+  location            = azurerm_resource_group.appgw.location
+  resource_group_name = azurerm_resource_group.appgw.name
+  tags                = merge(var.tags, { resource_type = "waf_policy" })
+
+  policy_settings {
+    enabled = true
+    mode    = var.waf_mode
+  }
+
+  managed_rules {
+    managed_rule_set {
+      type    = "OWASP"
+      version = var.waf_rule_set_version
+    }
+  }
+}
+
 # ── APPLICATION GATEWAY WAF_v2 ────────────────────────────────────────────────
 
 resource "azurerm_application_gateway" "appgw" {
@@ -87,6 +110,12 @@ resource "azurerm_application_gateway" "appgw" {
   sku {
     name = "WAF_v2"
     tier = "WAF_v2"
+  }
+
+  # Politique TLS explicite — la valeur par défaut (AppGwSslPolicy20150501) est dépréciée par Azure
+  ssl_policy {
+    policy_type = "Predefined"
+    policy_name = "AppGwSslPolicy20220101"
   }
 
   autoscale_configuration {
@@ -190,12 +219,7 @@ resource "azurerm_application_gateway" "appgw" {
     }
   }
 
-  waf_configuration {
-    enabled          = true
-    firewall_mode    = var.waf_mode
-    rule_set_type    = "OWASP"
-    rule_set_version = var.waf_rule_set_version
-  }
+  firewall_policy_id = azurerm_web_application_firewall_policy.appgw.id
 
   # User Assigned Identity for Key Vault certificate access
   dynamic "identity" {

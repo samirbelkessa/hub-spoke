@@ -17,6 +17,7 @@ locals {
   subnet_appgw = "ApplicationGatewaySubnet" # Azure-imposed name — cannot follow CAF pattern
   appgw        = "agw-${local.suffix}"
   pip_appgw    = "pip-agw-${local.suffix}"
+  waf_policy   = "waf-${local.suffix}"
 
   # ── SPOKE ──────────────────────────────────────────────────────────────────
   rg_spoke             = "rg-${local.suffix}-spoke"

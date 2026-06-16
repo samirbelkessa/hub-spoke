@@ -244,6 +244,7 @@ resource "azurerm_key_vault" "spoke" {
   sku_name                   = var.key_vault_sku
   soft_delete_retention_days = var.kv_soft_delete_days
   purge_protection_enabled   = var.kv_purge_protection
+  enable_rbac_authorization  = true # autorisation par RBAC uniquement — pas d'access policies
   tags                       = merge(var.tags, { resource_type = "key_vault" })
 
   network_acls {
@@ -258,15 +259,21 @@ resource "azurerm_key_vault" "spoke" {
   }
 }
 
-# Access policy — webapp System Assigned MSI (Secret: Get, List)
-# Separate resource to avoid inline access_policy + dependency cycles
-resource "azurerm_key_vault_access_policy" "webapp" {
-  provider     = azurerm.spoke
-  key_vault_id = azurerm_key_vault.spoke.id
-  tenant_id    = var.tenant_id
-  object_id    = azurerm_linux_web_app.webapp.identity[0].principal_id
+# RBAC — webapp System Assigned MSI : lecture des secrets (Key Vault Secrets User)
+resource "azurerm_role_assignment" "webapp_kv_secrets" {
+  provider             = azurerm.spoke
+  scope                = azurerm_key_vault.spoke.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_linux_web_app.webapp.identity[0].principal_id
+}
 
-  secret_permissions = ["Get", "List"]
+# RBAC — déployeur Terraform : gestion des secrets (Key Vault Secrets Officer)
+# nécessaire pour écrire le secret ci-dessous
+resource "azurerm_role_assignment" "deployer_kv_secrets" {
+  provider             = azurerm.spoke
+  scope                = azurerm_key_vault.spoke.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 resource "azurerm_key_vault_secret" "sql_connection_string" {
@@ -275,7 +282,10 @@ resource "azurerm_key_vault_secret" "sql_connection_string" {
   value        = var.sql_connection_string_secret
   key_vault_id = azurerm_key_vault.spoke.id
 
-  depends_on = [azurerm_key_vault_access_policy.webapp]
+  depends_on = [
+    azurerm_role_assignment.webapp_kv_secrets,
+    azurerm_role_assignment.deployer_kv_secrets,
+  ]
 }
 
 # ── SQL ───────────────────────────────────────────────────────────────────────
@@ -344,8 +354,15 @@ resource "azurerm_linux_web_app" "webapp" {
   }
 
   app_settings = {
-    "SQLCONNSTR_DefaultConnection"       = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.spoke.name};SecretName=sql-connection-string)"
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
+  }
+
+  # Le préfixe SQLCONNSTR_ est réservé : la connection string passe par un bloc dédié,
+  # qui expose automatiquement la variable d'env SQLCONNSTR_DefaultConnection.
+  connection_string {
+    name  = "DefaultConnection"
+    type  = "SQLAzure"
+    value = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.spoke.name};SecretName=sql-connection-string)"
   }
 }
 

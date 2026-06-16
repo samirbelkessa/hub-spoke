@@ -22,3 +22,9 @@ data "azurerm_resource_group" "hub_network" {
   provider = azurerm.hub
   name     = var.hub_rg_network_name
 }
+
+# Identité courante (déployeur Terraform) — pour lui octroyer une access policy
+# permettant d'écrire le secret de connection string dans le Key Vault.
+data "azurerm_client_config" "current" {
+  provider = azurerm.spoke
+}

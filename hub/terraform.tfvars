@@ -10,11 +10,11 @@
 # ── NAMING ───────────────────────────────────────────────────────────────────
 
 environment    = "dev"           # dev | staging | prod
-location       = "francecentral"
+location       = "francecentral" # imposé par la policy CAF Governance (francecentral | westeurope)
 location_short = "frc"           # frc = France Central
 workload       = "myapp"         # lowercase alphanumeric, no hyphens
 instance       = "001"
-
+hub_subscription_id = "8d0e92f6-619b-497b-9957-9dfaf7111240" # Sensitive, must be passed via environment variable
 # ── NETWORK ──────────────────────────────────────────────────────────────────
 
 hub_vnet_address_space  = ["10.0.0.0/16"]
@@ -44,4 +44,5 @@ tags = {
   environment = "dev"
   managed_by  = "terraform"
   project     = "hub-spoke"
+  NetworkType = "Hub" # requis par la policy CAF Network Baseline sur les resource groups
 }

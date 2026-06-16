@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "PowerShell(terraform version *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(where terraform *)",
+      "PowerShell(winget install *)",
+      "PowerShell(terraform init *)",
+      "PowerShell(terraform validate *)",
+      "PowerShell(terraform plan *)"
     ]
   }
 }

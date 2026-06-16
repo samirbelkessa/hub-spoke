@@ -43,6 +43,11 @@ output "pip_appgw" {
   description = "Name of the Application Gateway public IP"
 }
 
+output "waf_policy" {
+  value       = local.waf_policy
+  description = "Name of the Application Gateway WAF policy"
+}
+
 # ── SPOKE ─────────────────────────────────────────────────────────────────────
 
 output "rg_spoke" {
