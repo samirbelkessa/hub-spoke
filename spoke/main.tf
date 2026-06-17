@@ -32,7 +32,7 @@ resource "azurerm_resource_group" "spoke" {
 resource "azurerm_virtual_network" "spoke" {
   provider            = azurerm.spoke
   name                = module.naming.vnet_spoke
-  location            = azurerm_resource_group.spoke.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.spoke.name
   address_space       = var.spoke_vnet_address_space
   tags                = merge(var.tags, { resource_type = "virtual_network" })
@@ -72,7 +72,7 @@ resource "azurerm_subnet" "pe" {
 resource "azurerm_network_security_group" "app" {
   provider            = azurerm.spoke
   name                = module.naming.nsg_app
-  location            = azurerm_resource_group.spoke.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.spoke.name
   tags                = merge(var.tags, { resource_type = "network_security_group" })
 
@@ -154,7 +154,7 @@ resource "azurerm_network_security_group" "app" {
 resource "azurerm_network_security_group" "pe" {
   provider            = azurerm.spoke
   name                = module.naming.nsg_pe
-  location            = azurerm_resource_group.spoke.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.spoke.name
   tags                = merge(var.tags, { resource_type = "network_security_group" })
 
@@ -238,7 +238,7 @@ resource "azurerm_virtual_network_peering" "hub_to_spoke" {
 resource "azurerm_key_vault" "spoke" {
   provider                   = azurerm.spoke
   name                       = module.naming.key_vault
-  location                   = azurerm_resource_group.spoke.location
+  location                   = var.location
   resource_group_name        = azurerm_resource_group.spoke.name
   tenant_id                  = var.tenant_id
   sku_name                   = var.key_vault_sku
@@ -294,7 +294,7 @@ resource "azurerm_mssql_server" "sql" {
   provider                      = azurerm.spoke
   name                          = module.naming.sql_server
   resource_group_name           = azurerm_resource_group.spoke.name
-  location                      = azurerm_resource_group.spoke.location
+  location                      = var.location
   version                       = var.sql_server_version
   administrator_login           = var.sql_admin_login
   administrator_login_password  = var.sql_admin_password
@@ -326,7 +326,7 @@ resource "azurerm_mssql_database" "sql" {
 resource "azurerm_service_plan" "asp" {
   provider            = azurerm.spoke
   name                = module.naming.app_service_plan
-  location            = azurerm_resource_group.spoke.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.spoke.name
   os_type             = var.asp_os_type
   sku_name            = var.asp_sku_name
@@ -336,7 +336,7 @@ resource "azurerm_service_plan" "asp" {
 resource "azurerm_linux_web_app" "webapp" {
   provider                      = azurerm.spoke
   name                          = module.naming.webapp
-  location                      = azurerm_resource_group.spoke.location
+  location                      = var.location
   resource_group_name           = azurerm_resource_group.spoke.name
   service_plan_id               = azurerm_service_plan.asp.id
   https_only                    = true
@@ -366,12 +366,37 @@ resource "azurerm_linux_web_app" "webapp" {
   }
 }
 
+# ── PRIVATE DNS — LIENS VNET SPOKE (zones centralisées dans le hub) ───────────
+# Les zones vivent dans la souscription hub → provider = azurerm.hub.
+# Permettent au VNet spoke (webapp en VNet Integration) de résoudre SQL et webapp
+# vers les IP privées de leurs private endpoints.
+
+resource "azurerm_private_dns_zone_virtual_network_link" "spoke_sql" {
+  provider              = azurerm.hub
+  name                  = "spoke-vnet-link"
+  resource_group_name   = var.hub_rg_dns_name
+  private_dns_zone_name = data.azurerm_private_dns_zone.sql.name
+  virtual_network_id    = azurerm_virtual_network.spoke.id
+  registration_enabled  = false
+  tags                  = merge(var.tags, { resource_type = "private_dns_zone_vnet_link" })
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "spoke_webapp" {
+  provider              = azurerm.hub
+  name                  = "spoke-vnet-link"
+  resource_group_name   = var.hub_rg_dns_name
+  private_dns_zone_name = data.azurerm_private_dns_zone.webapp.name
+  virtual_network_id    = azurerm_virtual_network.spoke.id
+  registration_enabled  = false
+  tags                  = merge(var.tags, { resource_type = "private_dns_zone_vnet_link" })
+}
+
 # ── PRIVATE ENDPOINTS ─────────────────────────────────────────────────────────
 
 resource "azurerm_private_endpoint" "sql" {
   provider            = azurerm.spoke
   name                = module.naming.pe_sql
-  location            = azurerm_resource_group.spoke.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.spoke.name
   subnet_id           = azurerm_subnet.pe.id
   tags                = merge(var.tags, { resource_type = "private_endpoint" })
@@ -383,19 +408,16 @@ resource "azurerm_private_endpoint" "sql" {
     is_manual_connection           = false
   }
 
-  dynamic "private_dns_zone_group" {
-    for_each = var.private_dns_zone_sql_id != "" ? [1] : []
-    content {
-      name                 = "pdnszg-sql"
-      private_dns_zone_ids = [var.private_dns_zone_sql_id]
-    }
+  private_dns_zone_group {
+    name                 = "pdnszg-sql"
+    private_dns_zone_ids = [data.azurerm_private_dns_zone.sql.id]
   }
 }
 
 resource "azurerm_private_endpoint" "webapp" {
   provider            = azurerm.spoke
   name                = module.naming.pe_webapp
-  location            = azurerm_resource_group.spoke.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.spoke.name
   subnet_id           = azurerm_subnet.pe.id
   tags                = merge(var.tags, { resource_type = "private_endpoint" })
@@ -407,11 +429,8 @@ resource "azurerm_private_endpoint" "webapp" {
     is_manual_connection           = false
   }
 
-  dynamic "private_dns_zone_group" {
-    for_each = var.private_dns_zone_webapp_id != "" ? [1] : []
-    content {
-      name                 = "pdnszg-webapp"
-      private_dns_zone_ids = [var.private_dns_zone_webapp_id]
-    }
+  private_dns_zone_group {
+    name                 = "pdnszg-webapp"
+    private_dns_zone_ids = [data.azurerm_private_dns_zone.webapp.id]
   }
 }

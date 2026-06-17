@@ -60,3 +60,20 @@ output "pip_appgw_address" {
   value       = azurerm_public_ip.appgw.ip_address
   description = "Public IP address of the Application Gateway"
 }
+
+# ── PRIVATE DNS (consommé par le spoke) ───────────────────────────────────────
+
+output "hub_rg_dns_name" {
+  value       = azurerm_resource_group.dns.name
+  description = "Name of the dedicated Private DNS resource group"
+}
+
+output "private_dns_zone_sql_id" {
+  value       = azurerm_private_dns_zone.sql.id
+  description = "Resource ID of the Azure SQL Private DNS zone"
+}
+
+output "private_dns_zone_webapp_id" {
+  value       = azurerm_private_dns_zone.webapp.id
+  description = "Resource ID of the App Service Private DNS zone"
+}

@@ -50,7 +50,7 @@ resource "azurerm_resource_group" "pip" {
 
 resource "azurerm_virtual_network" "hub" {
   name                = module.naming.vnet_hub
-  location            = azurerm_resource_group.network.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.network.name
   address_space       = var.hub_vnet_address_space
   tags                = merge(var.tags, { resource_type = "virtual_network" })
@@ -64,11 +64,47 @@ resource "azurerm_subnet" "appgw" {
   address_prefixes     = [var.hub_subnet_appgw_prefix]
 }
 
+# ── PRIVATE DNS (zones centralisées dans le hub) ──────────────────────────────
+
+# RG dédié aux Private DNS Zones — centralisées dans le hub, consommées par le spoke
+resource "azurerm_resource_group" "dns" {
+  name     = module.naming.rg_dns
+  location = var.location
+  tags     = merge(var.tags, { resource_type = "resource_group" })
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_private_dns_zone" "sql" {
+  name                = module.naming.pdns_sql
+  resource_group_name = azurerm_resource_group.dns.name
+  tags                = merge(var.tags, { resource_type = "private_dns_zone" })
+}
+
+resource "azurerm_private_dns_zone" "webapp" {
+  name                = module.naming.pdns_webapp
+  resource_group_name = azurerm_resource_group.dns.name
+  tags                = merge(var.tags, { resource_type = "private_dns_zone" })
+}
+
+# Lien vers le VNet hub sur la zone App Service — permet à l'AppGW de résoudre
+# le webapp vers l'IP privée de son private endpoint (backend en accès privé).
+resource "azurerm_private_dns_zone_virtual_network_link" "hub_webapp" {
+  name                  = "hub-vnet-link"
+  resource_group_name   = azurerm_resource_group.dns.name
+  private_dns_zone_name = azurerm_private_dns_zone.webapp.name
+  virtual_network_id    = azurerm_virtual_network.hub.id
+  registration_enabled  = false
+  tags                  = merge(var.tags, { resource_type = "private_dns_zone_vnet_link" })
+}
+
 # ── PUBLIC IP ─────────────────────────────────────────────────────────────────
 
 resource "azurerm_public_ip" "appgw" {
   name                = module.naming.pip_appgw
-  location            = azurerm_resource_group.pip.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.pip.name
   allocation_method   = "Static"
   sku                 = "Standard"
@@ -82,7 +118,7 @@ resource "azurerm_public_ip" "appgw" {
 
 resource "azurerm_web_application_firewall_policy" "appgw" {
   name                = module.naming.waf_policy
-  location            = azurerm_resource_group.appgw.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.appgw.name
   tags                = merge(var.tags, { resource_type = "waf_policy" })
 
@@ -103,7 +139,7 @@ resource "azurerm_web_application_firewall_policy" "appgw" {
 
 resource "azurerm_application_gateway" "appgw" {
   name                = module.naming.appgw
-  location            = azurerm_resource_group.appgw.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.appgw.name
   tags                = merge(var.tags, { resource_type = "application_gateway" })
 

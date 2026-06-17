@@ -48,6 +48,21 @@ output "waf_policy" {
   description = "Name of the Application Gateway WAF policy"
 }
 
+output "rg_dns" {
+  value       = local.rg_dns
+  description = "Name of the dedicated Private DNS resource group (hub)"
+}
+
+output "pdns_sql" {
+  value       = local.pdns_sql
+  description = "Name of the Azure SQL Private DNS zone (Azure-imposed)"
+}
+
+output "pdns_webapp" {
+  value       = local.pdns_webapp
+  description = "Name of the App Service Private DNS zone (Azure-imposed)"
+}
+
 # ── SPOKE ─────────────────────────────────────────────────────────────────────
 
 output "rg_spoke" {

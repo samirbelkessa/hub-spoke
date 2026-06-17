@@ -18,6 +18,9 @@ locals {
   appgw        = "agw-${local.suffix}"
   pip_appgw    = "pip-agw-${local.suffix}"
   waf_policy   = "waf-${local.suffix}"
+  rg_dns       = "rg-${local.suffix}-dns"
+  pdns_sql     = "privatelink.database.windows.net" # nom imposé par Azure (Azure SQL)
+  pdns_webapp  = "privatelink.azurewebsites.net"    # nom imposé par Azure (App Service)
 
   # ── SPOKE ──────────────────────────────────────────────────────────────────
   rg_spoke             = "rg-${local.suffix}-spoke"

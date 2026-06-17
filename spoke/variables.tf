@@ -95,6 +95,11 @@ variable "hub_rg_appgw_name" {
   description = "Name of the hub AppGW resource group (from hub output: hub_rg_appgw_name)"
 }
 
+variable "hub_rg_dns_name" {
+  type        = string
+  description = "Name of the hub dedicated Private DNS resource group (from hub output: hub_rg_dns_name)"
+}
+
 variable "hub_subnet_appgw_prefix" {
   type        = string
   description = "CIDR prefix of the hub ApplicationGatewaySubnet — used in NSG inbound rules"
@@ -115,18 +120,6 @@ variable "spoke_subnet_app_prefix" {
 variable "spoke_subnet_pe_prefix" {
   type        = string
   description = "Address prefix for the private endpoint subnet (e.g. 10.1.2.0/24)"
-}
-
-variable "private_dns_zone_sql_id" {
-  type        = string
-  default     = ""
-  description = "Resource ID of the Private DNS Zone for SQL (privatelink.database.windows.net). Leave empty to skip DNS zone group."
-}
-
-variable "private_dns_zone_webapp_id" {
-  type        = string
-  default     = ""
-  description = "Resource ID of the Private DNS Zone for Web Apps (privatelink.azurewebsites.net). Leave empty to skip DNS zone group."
 }
 
 # ── SECURITY / KEY VAULT ──────────────────────────────────────────────────────

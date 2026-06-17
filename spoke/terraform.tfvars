@@ -31,6 +31,7 @@ hub_vnet_name           = "vnet-myapp-dev-frc-001-hub"
 hub_rg_network_name     = "rg-myapp-dev-frc-001-network"
 hub_appgw_name          = "agw-myapp-dev-frc-001"
 hub_rg_appgw_name       = "rg-myapp-dev-frc-001-appgw"
+hub_rg_dns_name         = "rg-myapp-dev-frc-001-dns"
 hub_subnet_appgw_prefix = "10.0.1.0/24"
 
 # ── NETWORK ──────────────────────────────────────────────────────────────────
@@ -39,9 +40,8 @@ spoke_vnet_address_space = ["10.1.0.0/16"]
 spoke_subnet_app_prefix  = "10.1.1.0/24"
 spoke_subnet_pe_prefix   = "10.1.2.0/24"
 
-# Set after creating Private DNS Zones (centralised in hub subscription)
-private_dns_zone_sql_id    = ""
-private_dns_zone_webapp_id = ""
+# Les Private DNS Zones sont centralisées dans le hub (RG hub_rg_dns_name) et
+# consommées via data sources — voir data.tf. Aucun ID à renseigner ici.
 
 # ── SECURITY / KEY VAULT ──────────────────────────────────────────────────────
 
