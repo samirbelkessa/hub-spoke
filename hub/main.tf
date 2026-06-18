@@ -7,7 +7,7 @@
 # =============================================================================
 
 module "naming" {
-  source         = "../modules/naming"
+  source         = "git::https://github.com/samirbelkessa/hub-spoke.git//modules/naming?ref=master"
   environment    = var.environment
   location_short = var.location_short
   workload       = var.workload

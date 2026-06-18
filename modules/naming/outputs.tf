@@ -139,3 +139,55 @@ output "key_vault" {
   value       = local.key_vault
   description = "Name of the Key Vault (truncated to 24 characters)"
 }
+
+# ── VM / BASTION ───────────────────────────────────────────────────────────────
+
+output "rg_vm" {
+  value       = local.rg_vm
+  description = "Name of the VM resource group"
+}
+
+output "vnet_vm" {
+  value       = local.vnet_vm
+  description = "Name of the VM virtual network"
+}
+
+output "subnet_vm" {
+  value       = local.subnet_vm
+  description = "Name of the VM subnet"
+}
+
+output "subnet_bastion" {
+  value       = local.subnet_bastion
+  description = "Name of the Bastion subnet (Azure-imposed: AzureBastionSubnet)"
+}
+
+output "nsg_vm" {
+  value       = local.nsg_vm
+  description = "Name of the NSG for the VM subnet"
+}
+
+output "nic_vm" {
+  value       = local.nic_vm
+  description = "Name of the VM network interface"
+}
+
+output "vm" {
+  value       = local.vm
+  description = "Name of the virtual machine resource"
+}
+
+output "vm_computer" {
+  value       = local.vm_computer
+  description = "Windows computer_name for the VM (truncated to 15 characters)"
+}
+
+output "bastion" {
+  value       = local.bastion
+  description = "Name of the Azure Bastion host"
+}
+
+output "pip_bastion" {
+  value       = local.pip_bastion
+  description = "Name of the Azure Bastion public IP"
+}

@@ -38,4 +38,16 @@ locals {
   peering_spoke_to_hub = "peer-spoke-to-hub-${local.suffix}"
   peering_hub_to_spoke = "peer-hub-to-spoke-${local.suffix}"
   key_vault            = "kv-${substr(local.suffix, 0, min(21, length(local.suffix)))}" # max 24 chars
+
+  # ── VM / BASTION (architecture vm-spoke autonome) ───────────────────────────
+  rg_vm          = "rg-${local.suffix}-vm"
+  vnet_vm        = "vnet-${local.suffix}-vm"
+  subnet_vm      = "snet-${local.suffix}-vm"
+  subnet_bastion = "AzureBastionSubnet" # nom imposé par Azure — ne suit pas le pattern CAF
+  nsg_vm         = "nsg-${local.suffix}-vm"
+  nic_vm         = "nic-${local.suffix}-vm"
+  vm             = "vm-${local.suffix}"
+  vm_computer    = substr(replace(local.suffix, "-", ""), 0, 15) # Windows computer_name max 15 chars
+  bastion        = "bas-${local.suffix}"
+  pip_bastion    = "pip-bas-${local.suffix}"
 }
